@@ -33,27 +33,10 @@ export const getDbConnConfig: () => PostgresConnectionOptions = () => {
 export const getTypeOrmConfig = () => {
 
   return {
-    synchronize: process.env.IS_SERVING_BUNDLE !== "true" && process.env.NODE_ENV !== "production",
+    synchronize: true,
     logging: false,
-
-    migrations: [
-      `src/migration/**/*.{ts,js}`,
-    ],
-    cli: {
-      entitiesDir: `src/entity`,
-      migrationsDir: `src/migration`,
-    },
-
-    entities: [
-      `src/entity/**/*.{ts,js}`,
-    ],
-
-    entitiesDir: `src/entity`,
-    migrationsDir: `src/migration`,
-
-    migrationsTableName: "migrations",
-    seeds: [`src/seeds/**/*.{ts,js}`],
-    factories: [`src/factories/**/*.{ts,js}`]
+    migrations: ['src/migration/**/*.{ts,js}'],
+    entities: ['src/entity/**/*.{ts,js}'],
   }
 }
 
