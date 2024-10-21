@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es5",
+      "es6"
+    ],
+    "baseUrl": "/src",
+    "paths": {
+      "@entites/*": [
+        "src/entity/*"
+      ],
+      "@migrations/*": [
+        "src/migration/*"
+      ]
+    },
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./build",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "esModuleInterop": true
+  }
+}
