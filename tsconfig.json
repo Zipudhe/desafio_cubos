@@ -11,7 +11,10 @@
       ],
       "@migrations/*": [
         "src/migration/*"
-      ]
+      ],
+      "@handlers/*": [
+        "src/handlers/*"
+      ],
     },
     "target": "es5",
     "module": "commonjs",
