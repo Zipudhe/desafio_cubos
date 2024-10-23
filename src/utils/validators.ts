@@ -10,7 +10,7 @@ export const isEmtpy = (data: any) => {
   return !!data
 }
 
-const hasRequiredFields = (fields: string[], data: Object) => {
+export const hasRequiredFields = (fields: string[], data: Object) => {
   if (isEmtpy(data)) {
     return false
   }
@@ -18,7 +18,7 @@ const hasRequiredFields = (fields: string[], data: Object) => {
   const keys = Object.keys(data)
 
   for (let key of keys) {
-    if (!(key in fields)) {
+    if (!fields.includes(key)) {
       return false
     }
   }
