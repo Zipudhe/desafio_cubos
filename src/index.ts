@@ -3,6 +3,7 @@ import { AppDataSource } from './db/index'
 import dotenv from 'dotenv'
 
 import { router } from './routes/index'
+import { ServerError } from './handlers/ErrorHandler'
 
 dotenv.config()
 
@@ -16,6 +17,7 @@ AppDataSource.initialize()
     app.use('/', router)
   })
   .catch(err => {
+    app.use('*', (_, res: Response) => ServerError('failed to connect to the database', res))
     console.log("failed to initialize database")
   })
 

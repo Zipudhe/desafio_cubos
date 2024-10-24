@@ -1,7 +1,7 @@
 type GenericResponse = {
   id: string,
-  createdAt: string,
-  updatedAt: string
+  createdAt: Date,
+  updatedAt: Date
 }
 
 
@@ -23,13 +23,18 @@ type NewAccount = {
 
 type NewAccountResponse = GenericResponse & NewAccount
 
+
+type CardType = 'physical' | 'virtual'
+
 type NewCard = {
-  type: string,
+  type: CardType,
   number: string,
   cvv: string
 }
 
 type NewCardResponse = GenericResponse & NewCard
+
+type TransactionType = 'credit' | 'debit'
 
 type NewTransaction = {
   value: string,
