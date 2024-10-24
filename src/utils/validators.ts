@@ -1,4 +1,4 @@
-export const isEmtpy = (data: any) => {
+export const isEmpty = (data: any) => {
   if (data instanceof Array) {
     return data.length == 0
   }
@@ -7,18 +7,23 @@ export const isEmtpy = (data: any) => {
     return Object.keys(data).length == 0
   }
 
-  return !!data
+  return !data
 }
 
 export const hasRequiredFields = (fields: string[], data: Object) => {
-  if (isEmtpy(data)) {
+  if (isEmpty(data)) {
     return false
   }
 
   const keys = Object.keys(data)
 
-  for (let key of keys) {
-    if (!fields.includes(key)) {
+  for (let field of fields) {
+
+    if (!keys.includes(field)) {
+      return false
+    }
+
+    if (isEmpty(data[field])) {
       return false
     }
   }
