@@ -7,7 +7,7 @@ import { hasRequiredFields } from '../utils/validators'
 
 const PeopleRepository = AppDataSource.getRepository(People)
 
-export const CreatePeople = async (req: Request<{}, {}, NewPerson>, res: Response) => {
+export const createPeople = async (req: Request<{}, {}, NewPerson>, res: Response) => {
 
   if (!hasRequiredFields(['name', 'document', 'password'], req.body)) {
     return BadRequest('missing required fields', res)
