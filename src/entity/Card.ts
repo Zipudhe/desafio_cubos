@@ -23,6 +23,6 @@ export class Card {
   @UpdateDateColumn()
   updatedAt: Date
 
-  @ManyToOne(() => Account, (account) => account.cards)
+  @ManyToOne(() => Account, (account) => account.cards, { onDelete: 'CASCADE' })
   account: Account
 }

@@ -12,14 +12,14 @@ export class Account {
   @Column({ type: 'char', length: 3 })
   branch: string
 
-  @Column({ type: 'char', length: 9 })
+  @Column({ type: 'char', length: 9, unique: true })
   account: string
 
-  @Column({ type: 'money', default: 0 })
+  @Column({ type: 'money' })
   balance: number
 
   @CreateDateColumn()
-  createdAt: Date // Esse "Date" pode dar problema!
+  createdAt: Date
 
   @UpdateDateColumn()
   updatedAt: Date

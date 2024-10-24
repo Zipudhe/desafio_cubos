@@ -1,61 +1,23 @@
-import Express, { Request, Response } from 'express'
+import Express from 'express'
 
-import { CreatedHandler, SuccesHandler } from '../handlers/SuccessHandler'
+import { AccountController } from '../controllers'
 
 export const router = Express.Router()
 
-type AccountData = {
-  branch: string,
-  account: string,
-}
+router.post('/', AccountController.createAccount)
 
-type CardData = {
-  type: string,
-  number: string,
-  cvv: string,
-}
+router.post('/:accountId/cards', AccountController.createAccountCard)
 
-type TransactionsData = {
-  value: number,
-  description: string
-}
+router.post('/:accountId/transactions', AccountController.createTransaction)
 
-type InternalTransaction = TransactionsData & {
-  receiverAccountId: string
-}
+router.post('/:accountId/transactions/internal', AccountController.createInternalTransaction)
 
-router.post('/', (req: Request<{}, {}, AccountData>, res: Response) => {
-  CreatedHandler({}, res)
-})
+router.post('/:accountId/transactions/:transactionId/revert', AccountController.revertTransaction)
 
-router.post('/:accountId/cards', (req: Request<{ accountId: string }, {}, CardData>, res: Response) => {
-  CreatedHandler({}, res)
-})
+router.get('/', AccountController.getAccounts)
 
-router.post('/:accountId/transactions', (req: Request<{ accountId: string }, {}, TransactionsData>, res: Response) => {
-  CreatedHandler({}, res)
-})
+router.get('/:accountId/cards', AccountController.getAccountCards)
 
-router.post('/:accountId/transactions/internal', (req: Request<{ accountId: string }, {}, InternalTransaction>, res: Response) => {
-  CreatedHandler({}, res)
-})
+router.get('/:accountId/transactions', AccountController.getAccountTransactions)
 
-router.post('/:accountId/transactions/:transactionId/revert', (req: Request<{ accountId: string, transactionId: string }, {}, {}>, res: Response) => {
-  CreatedHandler({}, res)
-})
-
-router.get('/', (req: Request<{}, {}, {}>, res: Response) => {
-  SuccesHandler({}, res)
-})
-
-router.get('/:accountId/cards', (req: Request<{}, {}, {}>, res: Response) => {
-  SuccesHandler({}, res)
-})
-
-router.get('/:accountId/transactions', (req: Request<{ accountId: string }, {}, {}>, res: Response) => {
-  CreatedHandler({}, res)
-})
-
-router.get('/:accountId/balance', (req: Request<{ accountId: string }, {}, {}>, res: Response) => {
-  CreatedHandler({}, res)
-})
+router.get('/:accountId/balance', AccountController.getAccountBalance)
