@@ -3,5 +3,4 @@ import { PeopleController } from '../controllers/index'
 
 export const router = Express.Router()
 
-
-router.post('/', PeopleController.CreatePeople)
+router.post('/', PeopleController.createPeople)
