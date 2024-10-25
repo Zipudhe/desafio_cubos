@@ -14,15 +14,12 @@ const PeopleRepository = AppDataSource.getRepository(People)
 const CardRepository = AppDataSource.getRepository(Card)
 const TransactionRepository = AppDataSource.getRepository(Transaction)
 
-
-
-export const createAccount = async (req: Request<{}, {}, NewAccount>, res: Response) => {
-  const personId = "9bc14d10-e497-4f9d-9362-3f714d7bb4de" // extrair do token
+export const createAccount = async (req: Request<{}, {}, NewAccount & { personId: string }>, res: Response) => {
 
   const accountRegex = /(\d{7}-\d{1})/
   const branchRegex = /(\d{3})/
 
-  const { branch, account } = req.body
+  const { branch, account, personId } = req.body
 
   if (!accountRegex.exec(account) || !branchRegex.exec(branch)) {
     return BadRequest("branch or account are invalid", res)
@@ -31,13 +28,13 @@ export const createAccount = async (req: Request<{}, {}, NewAccount>, res: Respo
   const person = await PeopleRepository.findOne({ where: { id: personId } })
 
   if (!person) {
-    return NotFound("person id not found", res)
+    return NotFound("person not found", res)
   }
 
   const newAccount = AccountRepository.create(req.body)
   newAccount.person = person
 
-  return AccountRepository.save(newAccount)
+  return AccountRepository.save({ ...newAccount, balance: 0.00 })
     .then(createdAccount => {
       const {
         id,
@@ -57,8 +54,8 @@ export const createAccount = async (req: Request<{}, {}, NewAccount>, res: Respo
 
 
 
-export const getAccounts = async (req: Request<{}, {}, {}>, res: Response) => {
-  const personId = "9bc14d10-e497-4f9d-9362-3f714d7bb4de" // extrair do token
+export const getAccounts = async (req: Request<{}, {}, { personId: string }>, res: Response) => {
+  const { personId } = req.body
 
   const accounts = await AccountRepository.find({
     select: {
@@ -84,26 +81,42 @@ export const createAccountCard = async (req: Request<{ accountId: string }, {}, 
   const cardNumberRegex = /(\d{4}\s*){4}/
   const cvvRegex = /(\d{3})/
 
-  const cardData = req.body
+  const { number, cvv, type } = req.body
+  const { accountId } = req.params
+  const cardPayload = {
+    number,
+    cvv,
+    type
+  }
 
-  const account = AccountRepository.exists({ where: { id: req.params.accountId } })
+  const account = await AccountRepository.findOne({ where: { id: accountId } })
 
-  if (!account) {
+  if (isEmpty(account)) {
     return BadRequest("invalid account", res)
   }
 
-  if (!cardNumberRegex.exec(cardData.number) || !cvvRegex.exec(cardData.cvv)) {
+  if (!cardNumberRegex.exec(number) || !cvvRegex.exec(cvv)) {
     return BadRequest("cvv or number are invalid", res)
   }
 
-  if (cardData.type == 'physical') {
+  const cardExists = await CardRepository.exists({
+    where: {
+      number: number
+    }
+  })
+
+  if (cardExists) {
+    return UnprocessableContent("card is already registered", res)
+  }
+
+  if (type == 'physical') {
     const totalPhysicalCards = await CardRepository.count({
       select: {
         id: true,
       },
       where: {
         account: {
-          id: req.params.accountId
+          id: accountId
         }
       }
     })
@@ -114,11 +127,13 @@ export const createAccountCard = async (req: Request<{ accountId: string }, {}, 
 
   }
 
-  const newCard = CardRepository.create(req.body)
+  const newCard = CardRepository.create(cardPayload)
+  newCard.account = account
 
   return CardRepository.save(newCard)
     .then(createdCard => {
-      const cardCleaned = { ...createdCard, number: createdCard[0].number.slice(-4) }
+      delete createdCard['account']
+      const cardCleaned = { ...createdCard, number: createdCard.number.slice(-4) }
       CreatedHandler(cardCleaned, res)
     })
     .catch(error => {
@@ -126,34 +141,42 @@ export const createAccountCard = async (req: Request<{ accountId: string }, {}, 
     })
 }
 
-export const getAccountCards = async (req: Request<{ accountId: string }, {}, NewCardResponse[]>, res: Response) => {
-  const account = await AccountRepository.exists({ where: { id: req.params.accountId } })
+export const getAccountCards = async (req: Request<{ accountId: string, itemsPerPage: number, currentPage: number }, {}, NewCardResponse[]>, res: Response) => {
+  const { accountId } = req.params
+  const itemsPerPage = req.params.itemsPerPage ?? 10
+  const page = req.params.itemsPerPage ?? 1
+  const currentPage = (page - 1) * itemsPerPage
+
+  const account = await AccountRepository.exists({ where: { id: accountId } })
 
   if (!account) {
     return NotFound("invalid account", res)
   }
 
-  await CardRepository.find({
-    select: {
-      id: true,
-      type: true,
-      number: true,
-      createdAt: true,
-      cvv: true,
-      updatedAt: true
-    },
-    where: {
-      account: {
-        id: req.params.accountId
-      }
-    }
-  })
+  console.log({ accountId, itemsPerPage, currentPage })
+
+  return AppDataSource.query(`
+    SELECT 
+      right(card."number", 4) AS "number",
+      card."id", card."type", 
+      card."createdAt", card."cvv", 
+      card."updatedAt" 
+    FROM "card" "card" 
+    WHERE "card"."accountId" = $1
+    limit $2
+    offset $3;
+`, [accountId, itemsPerPage, currentPage])
     .then(cards => SuccesHandler<NewCardResponse[]>(cards, res))
     .catch(error => UnprocessableContent(error.message, res))
 }
 
-export const getAccountTransactions = async (req: Request<{ accountId: string }, {}, NewTransactionResponse>, res: Response) => {
-  const account = await AccountRepository.exists({ where: { id: req.params.accountId } })
+export const getAccountTransactions = async (req: Request<{ accountId: string, itemsPerPage: number, currentPage: number }, {}, NewTransactionResponse>, res: Response) => {
+  const { accountId } = req.params
+  const account = await AccountRepository.exists({ where: { id: accountId } })
+
+  const itemsPerPage = req.params.itemsPerPage ?? 10
+  const page = req.params.itemsPerPage ?? 1
+  const currentPage = (page - 1) * itemsPerPage
 
   if (!account) {
     return NotFound("invalid account", res)
@@ -171,7 +194,9 @@ export const getAccountTransactions = async (req: Request<{ accountId: string },
       account: {
         id: req.params.accountId
       }
-    }
+    },
+    skip: currentPage,
+    take: itemsPerPage
   })
     .then(transactions => SuccesHandler(transactions, res))
     .catch(error => UnprocessableContent(error.message, res))
@@ -214,52 +239,60 @@ export const createTransaction = async (req: Request<{ accountId: string }, {}, 
     })
 
 
-  if (isEmpty(account)) {
+  if (!account) {
     return NotFound("invalid account", res)
   }
 
   const { value, type, description } = req.body
-  const parasedValue = Number.parseFloat(value)
+  const parsedValue = Number.parseFloat(value)
+  const positiveValue = parsedValue < 0 ? parsedValue * -1 : parsedValue
 
-  const newTransaction = TransactionRepository.create({ description, value, type })
+  const newTransaction = TransactionRepository.create({ description, value: `${positiveValue}`, type, account })
 
   if (type == 'debit') {
     const parsedAccountBalance = parseBalanceToFloat(account.balance)
-    if (parsedAccountBalance + parasedValue < 0) {
+    const updatedBalance = parsedAccountBalance - positiveValue
+
+    console.log({ balance: account.balance, updatedBalance })
+
+    if (updatedBalance < 0) {
       return UnprocessableContent("unsuficient balance", res)
     }
 
     return AppDataSource.transaction(async (manager) => {
-      account.balance = parsedAccountBalance + parasedValue
+      account.balance = updatedBalance
       await manager.save(account)
       return await manager.save(newTransaction)
     })
       .then((result) => {
         delete result.type
+        delete result.account
         CreatedHandler(result, res)
       })
       .catch(error => UnprocessableContent(error.message, res))
   }
 
 
-  if (parasedValue < 0) {
-    return UnprocessableContent("credit can not be negative", res)
-  }
+  const parsedAccountBalance = parseBalanceToFloat(account.balance)
+  const updatedBalance = parsedAccountBalance + positiveValue
 
-  return TransactionRepository.save(newTransaction)
-    .then((result) => CreatedHandler(result, res))
+  console.log({ balance: account.balance, updatedBalance })
+  return AppDataSource.transaction(async (manager) => {
+    account.balance = updatedBalance
+    await manager.save(account)
+    return await manager.save(newTransaction)
+  })
+    .then((result) => {
+      delete result.type
+      delete result.account
+      CreatedHandler(result, res)
+    })
     .catch(error => UnprocessableContent(error.message, res))
 }
 
 export const createInternalTransaction = async (req: Request<{ accountId: string }, {}, { value: string, description: string, type: TransactionType, receiverAccountId: string }>, res: Response) => {
-  const { type, description, receiverAccountId, value } = req.body
+  const { type, description, receiverAccountId } = req.body
   const { accountId } = req.params
-
-  const parasedValue = Number.parseFloat(value)
-
-  if (parasedValue < 0) {
-    return UnprocessableContent("for internal transactions value must be positive", res)
-  }
 
   const [senderAccount, receiverAccount, error] = await Promise.all([
     AccountRepository.findOne({
@@ -293,44 +326,63 @@ export const createInternalTransaction = async (req: Request<{ accountId: string
     return NotFound("missing receiver account", res)
   }
 
+  const parsedValue = Number.parseFloat(req.body.value)
+  const value = parsedValue < 0 ? parsedValue * -1 : parsedValue
+
+  const parsedSenderAccountBalance = parseBalanceToFloat(senderAccount.balance)
+  const parsedReceiverAccountBalance = parseBalanceToFloat(receiverAccount.balance)
+
+  const newTransaction = TransactionRepository.create({ description, value: `${value}`, type, receiver_account: receiverAccount, account: senderAccount })
+
   if (type == 'debit') {
-    const parsedSenderAccountBalance = parseBalanceToFloat(senderAccount.balance)
-    const parsedReceiverAccountBalance = parseBalanceToFloat(receiverAccount.balance)
-    if (parsedSenderAccountBalance - parasedValue < 0) {
+
+    const updatedSenderBalance = parsedSenderAccountBalance + value
+    const updatedReceiverBalance = parsedReceiverAccountBalance - value
+
+    if (updatedSenderBalance < 0) {
       return UnprocessableContent("unsuficient balance", res)
     }
 
     return AppDataSource.transaction(async (manager) => {
-      senderAccount.balance = parsedSenderAccountBalance - parasedValue
-      receiverAccount.balance = parsedReceiverAccountBalance + parasedValue
+      senderAccount.balance = updatedSenderBalance
+      receiverAccount.balance = updatedReceiverBalance
 
       await manager.save(senderAccount)
       await manager.save(receiverAccount)
-
-      const newTransaction = TransactionRepository.create({ description, value, type, receiver_account: receiverAccount })
 
       return await manager.save(newTransaction)
     })
       .then((result) => {
         delete result.type
         delete result.receiver_account
+        delete result.account
         CreatedHandler(result, res)
       })
       .catch(error => UnprocessableContent(error.message, res))
   }
 
+  const updatedSenderBalance = parsedSenderAccountBalance - value
+  const updatedReceiverBalance = parsedReceiverAccountBalance + value
+
+  if (updatedReceiverBalance < 0) {
+    return UnprocessableContent('insuficcient balance', res)
+  }
+
   return AppDataSource.transaction(async (manager) => {
-    receiverAccount.balance += parasedValue
+
+
+    receiverAccount.balance = updatedReceiverBalance
+    senderAccount.balance = updatedSenderBalance
 
     await manager.save(receiverAccount)
-
-    const newTransaction = TransactionRepository.create({ description, value, type, receiver_account: receiverAccount })
+    await manager.save(senderAccount)
 
     return await manager.save(newTransaction)
   })
     .then((result) => {
       delete result.type
       delete result.receiver_account
+      delete result.account
       CreatedHandler(result, res)
     })
     .catch(error => UnprocessableContent(error.message, res))
@@ -339,10 +391,8 @@ export const createInternalTransaction = async (req: Request<{ accountId: string
 
 
 export const revertTransaction = async (req: Request<{ accountId: string, transactionId: string }, {}, {}>, res: Response) => {
-  // Checar se a transacao já foi revertida pelo "updatedAt"
-  // Checar também se é uma trnsacao interna com receiver account
-
   const { accountId, transactionId } = req.params
+
   const [account, transaction, error] = await Promise.all([
     AccountRepository.findOne(
       {
@@ -358,6 +408,7 @@ export const revertTransaction = async (req: Request<{ accountId: string, transa
       select: {
         id: true,
         value: true,
+        type: true,
         updatedAt: true,
         createdAt: true,
       },
@@ -369,7 +420,9 @@ export const revertTransaction = async (req: Request<{ accountId: string, transa
       }
     })
   ])
-    .catch(error => [0, 0, error])
+    .catch(error => {
+      return [0, 0, error]
+    })
 
   if (!isEmpty(error)) {
     return UnprocessableContent(error.message, res)
@@ -383,10 +436,112 @@ export const revertTransaction = async (req: Request<{ accountId: string, transa
     return NotFound("Transaction not found", res)
   }
 
-
   const parsedTransactionValue = parseBalanceToFloat(transaction.value)
   const parsedAccountBalance = parseBalanceToFloat(account.balance)
+  const { createdAt, updatedAt } = transaction
+
+  if (createdAt.getTime() != updatedAt.getTime()) {
+    return UnprocessableContent("transaction has already been reverted", res)
+  }
+
+  transaction.description = "Estorno de cobrança indevida"
+
+  if (transaction.receiver_account) {
+    const receiverAccount = await AccountRepository.findOne({
+      select: {
+        balance: true
+      },
+      where: {
+        id: transaction.receiver_account
+      }
+    })
+
+    if (transaction.type == 'credit') {
+
+      const receiverAccountUpdatedBalance = receiverAccount.balance - parsedTransactionValue
+      const senderAccountBalance = parsedAccountBalance + parsedTransactionValue
+
+      if (receiverAccountUpdatedBalance > 0) {
+        receiverAccount.balance = receiverAccountUpdatedBalance
+        account.balance = senderAccountBalance
+
+        return AppDataSource.transaction(async manager => {
+          await manager.save(receiverAccount)
+          await manager.save(account)
+          return await manager.save(transaction)
+        })
+          .then(updatedTransaction => {
+            delete updatedTransaction['type']
+            SuccesHandler(updatedTransaction, res)
+          })
+          .catch(error => {
+            UnprocessableContent(error.message, res)
+          })
+      }
+
+      return UnprocessableContent("Account with not enought balance", res)
+    }
+
+    const receiverAccountUpdatedBalance = receiverAccount.balance + parsedTransactionValue
+    const senderAccountBalance = account.balance - parsedTransactionValue
+
+    if (senderAccountBalance > 0) {
+      receiverAccount.balance = receiverAccountUpdatedBalance
+      account.balance = senderAccountBalance
+      return AppDataSource.transaction(async manager => {
+        await manager.save(receiverAccount)
+        await manager.save(account)
+        return await manager.save(transaction)
+      })
+        .then(updatedTransaction => {
+          delete updatedTransaction['type']
+          SuccesHandler(updatedTransaction, res)
+        })
+        .catch(error => {
+          UnprocessableContent(error.message, res)
+        })
+    }
+
+    return UnprocessableContent("Account with not enought balance", res)
+  }
+
+  if (transaction.type == 'credit') {
+
+    const updatedAccountBalance = parsedAccountBalance - parsedTransactionValue
+    console.log({ account, updatedAccountBalance })
+
+    if (updatedAccountBalance > 0) {
+      account.balance = updatedAccountBalance
+      return AppDataSource.transaction(async manager => {
+        await manager.save(account)
+        return await manager.save(transaction)
+      })
+        .then(updatedTransaction => {
+          delete updatedTransaction['type']
+          SuccesHandler(updatedTransaction, res)
+        })
+        .catch(error => {
+          UnprocessableContent(error.message, res)
+        })
+    }
+
+    return UnprocessableContent("Account with not enought balance", res)
+  }
 
 
-  CreatedHandler("transaciton reversed", res)
+  const updatedAccountBalance = parsedAccountBalance + parsedTransactionValue
+  account.balance = updatedAccountBalance
+
+
+  return AppDataSource.transaction(async manager => {
+    await manager.save(account)
+    return await manager.save(transaction)
+  })
+    .then(updatedTransaction => {
+      delete updatedTransaction['type']
+      SuccesHandler(updatedTransaction, res)
+    })
+    .catch(error => {
+      UnprocessableContent(error.message, res)
+    })
 }
