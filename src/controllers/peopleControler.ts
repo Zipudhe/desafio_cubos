@@ -1,10 +1,12 @@
 import { Request, Response } from 'express'
+import bcrypt from 'bcrypt'
+
 import { AppDataSource } from '../db/index'
 import { People } from '../entity/People'
 import { BadRequest, UnprocessableContent, ServerError } from '../handlers/ErrorHandler'
 import { CreatedHandler } from '../handlers/SuccessHandler'
 import { hasRequiredFields } from '../utils/validators'
-import bcrypt from 'bcrypt'
+import { validateDocument } from '../services/validadeDocument'
 
 const PeopleRepository = AppDataSource.getRepository(People)
 
@@ -16,14 +18,18 @@ export const createPeople = async (req: Request<{}, {}, NewPerson>, res: Respons
 
   const data = req.body
 
-  // TODO:
-  // - validate document
-
   const person = await PeopleRepository.findOne({ where: { document: data.document } })
 
   if (person) {
     return UnprocessableContent("document already registered", res)
   }
+
+  // WARN: Not fully implemented
+  // const isValidated = await validateDocument(data.document)
+  //
+  // if (!isValidated) {
+  //   return UnprocessableContent("the document is invalid", res)
+  // }
 
   bcrypt.hash(data.password, 10, (error, hash) => {
     if (error) {
