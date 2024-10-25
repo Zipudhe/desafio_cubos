@@ -29,6 +29,7 @@
     "migration:run": "npm run typeorm migration:run -- -d ./src/db/index.ts",
     "migration:revert": "npm run typeorm migration:revert -- -d ./src/db/index.ts",
     "migration:create": "npm run typeorm migration:create -- -d ./src/db/index.ts",
-    "db:drop": "npm run typeorm schema:drop -- -d ./src/db/index.ts"
+    "db:drop": "npm run typeorm schema:drop -- -d ./src/db/index.ts",
+    "test": "node tests/**/*.test.ts"
   }
 }

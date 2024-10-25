@@ -1,6 +1,6 @@
-import assert from 'assert'
-import http from 'http'
-import { describe, it } from 'node:test'
+const assert = require('assert')
+const http = require('http')
+const { describe, it } = require('node:test')
 
 describe('API - Registro de Usuário', function () {
   it('deve registrar um novo usuário e retornar status 201', function (done) {
