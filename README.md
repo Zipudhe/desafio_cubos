@@ -13,22 +13,17 @@ Tecnologias utilizadas
 
 ## Certifique-se de ter os seguintes requisitos instalados:
 
-    Node.js: Versão 14 ou superior
-    npm: Gerenciador de pacotes do Node.js
-    PostgreSQL: Banco de dados para armazenamento de dados
+  - Node.js: Versão 14 ou superior
+  - npm: Gerenciador de pacotes do Node.js
+  - PostgreSQL: Banco de dados para armazenamento de dados
 
 ## Configuração do Ambiente
 
-    Clone o repositório:
-
-    bash
+### Clone o repositório:
 
 ```bash
 git clone https://github.com/Zipudhe/desafio_cubos.git
 cd desafio_cubos
-```
-
-```bash
 ```
 
 ## Instale as dependências:
