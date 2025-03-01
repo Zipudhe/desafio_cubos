@@ -2,8 +2,11 @@ FROM node:18.18
 
 WORKDIR cubos_app
 
-COPY . .
-
+COPY package.json /cubos_app
 RUN npm i -y
 
-EXPOSE 3000
+COPY . /cubos_app
+
+EXPOSE 8080
+
+CMD ["npm", "run", "dev"]
