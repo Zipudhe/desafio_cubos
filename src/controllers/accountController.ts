@@ -1,20 +1,23 @@
 import { Request, Response } from 'express'
 import { AppDataSource } from '../db/index'
-import { Account } from '../entity/Account'
-import { Card } from '../entity/Card'
+import { Account as AccountEntity } from '../entity/Account'
+import { Card as CardEntity } from '../entity/Card'
 import { People } from '../entity/People'
 import { Transaction } from '../entity/Transaction'
+
 import { BadRequest, UnprocessableContent, ServerError, NotFound } from '../handlers/ErrorHandler'
 import { CreatedHandler, SuccesHandler } from '../handlers/SuccessHandler'
-import { parseBalanceToFloat } from '../utils/balanceParser'
 import { hasRequiredFields, isEmpty } from '../utils/validators'
+import { parseBalanceToFloat } from '../utils/balanceParser'
 
-const AccountRepository = AppDataSource.getRepository(Account)
+import { Account, AccountResponse, Card, CardResponse, TransactionResponse, TransactionType } from './index'
+
+const AccountRepository = AppDataSource.getRepository(AccountEntity)
 const PeopleRepository = AppDataSource.getRepository(People)
-const CardRepository = AppDataSource.getRepository(Card)
+const CardRepository = AppDataSource.getRepository(CardEntity)
 const TransactionRepository = AppDataSource.getRepository(Transaction)
 
-export const createAccount = async (req: Request<{}, {}, NewAccount & { personId: string }>, res: Response) => {
+export const createAccount = async (req: Request<{}, {}, Account & { personId: string }>, res: Response) => {
 
   const accountRegex = /(\d{7}-\d{1})/
   const branchRegex = /(\d{3})/
@@ -46,13 +49,11 @@ export const createAccount = async (req: Request<{}, {}, NewAccount & { personId
 
       const newAccount = { id, branch, account, createdAt, updatedAt }
 
-      CreatedHandler<NewAccountResponse>(newAccount, res)
+      CreatedHandler<AccountResponse>(newAccount, res)
     })
     .catch(error => UnprocessableContent(error.message, res))
 
 }
-
-
 
 export const getAccounts = async (req: Request<{}, {}, { personId: string }>, res: Response) => {
   const { personId } = req.body
@@ -76,7 +77,7 @@ export const getAccounts = async (req: Request<{}, {}, { personId: string }>, re
 }
 
 
-export const createAccountCard = async (req: Request<{ accountId: string }, {}, NewCard>, res: Response) => {
+export const createAccountCard = async (req: Request<{ accountId: string }, {}, Card>, res: Response) => {
 
   const cardNumberRegex = /(\d{4}\s*){4}/
   const cvvRegex = /(\d{3})/
@@ -141,7 +142,7 @@ export const createAccountCard = async (req: Request<{ accountId: string }, {}, 
     })
 }
 
-export const getAccountCards = async (req: Request<{ accountId: string, itemsPerPage: number, currentPage: number }, {}, NewCardResponse[]>, res: Response) => {
+export const getAccountCards = async (req: Request<{ accountId: string, itemsPerPage: number, currentPage: number }, {}, CardResponse[]>, res: Response) => {
   const { accountId } = req.params
   const itemsPerPage = req.params.itemsPerPage ?? 10
   const page = req.params.itemsPerPage ?? 1
@@ -166,11 +167,11 @@ export const getAccountCards = async (req: Request<{ accountId: string, itemsPer
     limit $2
     offset $3;
 `, [accountId, itemsPerPage, currentPage])
-    .then(cards => SuccesHandler<NewCardResponse[]>(cards, res))
+    .then(cards => SuccesHandler<CardResponse[]>(cards, res))
     .catch(error => UnprocessableContent(error.message, res))
 }
 
-export const getAccountTransactions = async (req: Request<{ accountId: string, itemsPerPage: number, currentPage: number }, {}, NewTransactionResponse>, res: Response) => {
+export const getAccountTransactions = async (req: Request<{ accountId: string, itemsPerPage: number, currentPage: number }, {}, TransactionResponse>, res: Response) => {
   const { accountId } = req.params
   const account = await AccountRepository.exists({ where: { id: accountId } })
 
@@ -244,6 +245,7 @@ export const createTransaction = async (req: Request<{ accountId: string }, {}, 
   }
 
   const { value, type, description } = req.body
+
   const parsedValue = Number.parseFloat(value)
   const positiveValue = parsedValue < 0 ? parsedValue * -1 : parsedValue
 
@@ -253,7 +255,7 @@ export const createTransaction = async (req: Request<{ accountId: string }, {}, 
     const parsedAccountBalance = parseBalanceToFloat(account.balance)
     const updatedBalance = parsedAccountBalance - positiveValue
 
-    console.log({ balance: account.balance, updatedBalance })
+    console.log({ balance: parsedAccountBalance, updatedBalance })
 
     if (updatedBalance < 0) {
       return UnprocessableContent("unsuficient balance", res)
@@ -276,7 +278,8 @@ export const createTransaction = async (req: Request<{ accountId: string }, {}, 
   const parsedAccountBalance = parseBalanceToFloat(account.balance)
   const updatedBalance = parsedAccountBalance + positiveValue
 
-  console.log({ balance: account.balance, updatedBalance })
+  console.log({ account, updatedBalance })
+
   return AppDataSource.transaction(async (manager) => {
     account.balance = updatedBalance
     await manager.save(account)
@@ -329,15 +332,12 @@ export const createInternalTransaction = async (req: Request<{ accountId: string
   const parsedValue = Number.parseFloat(req.body.value)
   const value = parsedValue < 0 ? parsedValue * -1 : parsedValue
 
-  const parsedSenderAccountBalance = parseBalanceToFloat(senderAccount.balance)
-  const parsedReceiverAccountBalance = parseBalanceToFloat(receiverAccount.balance)
-
   const newTransaction = TransactionRepository.create({ description, value: `${value}`, type, receiver_account: receiverAccount, account: senderAccount })
 
   if (type == 'debit') {
 
-    const updatedSenderBalance = parsedSenderAccountBalance + value
-    const updatedReceiverBalance = parsedReceiverAccountBalance - value
+    const updatedSenderBalance = senderAccount.balance + value
+    const updatedReceiverBalance = receiverAccount.balance - value
 
     if (updatedSenderBalance < 0) {
       return UnprocessableContent("unsuficient balance", res)
@@ -361,8 +361,8 @@ export const createInternalTransaction = async (req: Request<{ accountId: string
       .catch(error => UnprocessableContent(error.message, res))
   }
 
-  const updatedSenderBalance = parsedSenderAccountBalance - value
-  const updatedReceiverBalance = parsedReceiverAccountBalance + value
+  const updatedSenderBalance = senderAccount.balance - value
+  const updatedReceiverBalance = receiverAccount.balance + value
 
   if (updatedReceiverBalance < 0) {
     return UnprocessableContent('insuficcient balance', res)
@@ -438,6 +438,7 @@ export const revertTransaction = async (req: Request<{ accountId: string, transa
 
   const parsedTransactionValue = parseBalanceToFloat(transaction.value)
   const parsedAccountBalance = parseBalanceToFloat(account.balance)
+
   const { createdAt, updatedAt } = transaction
 
   if (createdAt.getTime() != updatedAt.getTime()) {
@@ -510,7 +511,7 @@ export const revertTransaction = async (req: Request<{ accountId: string, transa
     const updatedAccountBalance = parsedAccountBalance - parsedTransactionValue
     console.log({ account, updatedAccountBalance })
 
-    if (updatedAccountBalance > 0) {
+    if (updatedAccountBalance >= 0) {
       account.balance = updatedAccountBalance
       return AppDataSource.transaction(async manager => {
         await manager.save(account)

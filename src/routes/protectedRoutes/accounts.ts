@@ -1,6 +1,6 @@
 import Express from 'express'
 
-import { AccountController } from '../controllers'
+import { AccountController } from '../../controllers'
 
 export const router = Express.Router()
 

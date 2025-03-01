@@ -1,19 +1,14 @@
-import Express from 'express'
+import Express, { NextFunction, Request, Response } from 'express'
 import { router as PeopleRouter } from './people'
-import { router as AccountsRouter } from './accounts'
-import { router as CardsRouter } from './accounts'
+import { protectedRouter } from './protectedRoutes'
 import { AuthController } from '../controllers'
-import { authMiddleware } from '../middlewares'
 
-export const router = Express.Router()
+const router = Express.Router()
 
 router
   .use("/people", PeopleRouter)
-  .post('/login', AuthController.login)
+  .post("/login", AuthController.login)
 
-router.use(authMiddleware)
+router.use(protectedRouter)
 
-router
-  .use("/accounts", AccountsRouter)
-  .use("/cards", CardsRouter)
-
+export default router

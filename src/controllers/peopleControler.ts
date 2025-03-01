@@ -6,11 +6,12 @@ import { People } from '../entity/People'
 import { BadRequest, UnprocessableContent, ServerError } from '../handlers/ErrorHandler'
 import { CreatedHandler } from '../handlers/SuccessHandler'
 import { hasRequiredFields } from '../utils/validators'
-import { validateDocument } from '../services/validadeDocument'
+
+import { Person } from './index'
 
 const PeopleRepository = AppDataSource.getRepository(People)
 
-export const createPeople = async (req: Request<{}, {}, NewPerson>, res: Response) => {
+export const createPeople = async (req: Request<{}, {}, Person>, res: Response) => {
 
   if (!hasRequiredFields(['name', 'document', 'password'], req.body)) {
     return BadRequest('missing required fields', res)

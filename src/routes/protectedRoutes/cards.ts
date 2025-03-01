@@ -1,6 +1,6 @@
 import Express, { Request, Response } from 'express'
 
-import { SuccesHandler } from '../handlers/SuccessHandler'
+import { SuccesHandler } from '../../handlers/SuccessHandler'
 
 export const router = Express.Router()
 

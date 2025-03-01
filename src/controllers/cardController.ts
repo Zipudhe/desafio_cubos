@@ -3,6 +3,8 @@ import { AppDataSource } from '../db/index'
 import { UnprocessableContent } from '../handlers/ErrorHandler'
 import { SuccesHandler } from '../handlers/SuccessHandler'
 
+import { CardResponse } from './index'
+
 type RequestQueryParams = {
   itemsPerPage: number,
   currentPage: number
@@ -28,6 +30,6 @@ export const getCards: (req: Request<RequestQueryParams, {}, { personId: number 
     limit $2
     offset $3;
 `, [personId, itemsPerPage, currentPage])
-    .then(cards => SuccesHandler<NewCardResponse[]>(cards, res))
+    .then(cards => SuccesHandler<CardResponse[]>(cards, res))
     .catch(error => UnprocessableContent(error.message, res))
 }

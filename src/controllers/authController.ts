@@ -20,6 +20,7 @@ export const login = async (req: Request<{}, {}, { document: string, password: s
   }
 
   const data = req.body
+  const document = data.document.replace(/[\.\-\/]/g, '')
 
   const person = await PeopleRepository.findOne({
     select: {
@@ -27,7 +28,7 @@ export const login = async (req: Request<{}, {}, { document: string, password: s
       password: true,
       name: true
     },
-    where: { document: data.document }
+    where: { document }
   })
 
   if (!person) {

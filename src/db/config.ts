@@ -9,11 +9,13 @@ export const getDbConnConfig: () => PostgresConnectionOptions = () => {
   }
 
   // if DATABASE_URL provided
-  if (process.env.DATABASE_URL)
+  if (process.env.DATABASE_URL) {
     return {
       ...baseConfig,
       url: process.env.DATABASE_URL,
     }
+  }
+
 
   // if DB_* provided
   if (process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_NAME)
