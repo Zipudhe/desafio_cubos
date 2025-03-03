@@ -142,10 +142,11 @@ export const createAccountCard = async (req: Request<{ accountId: string }, {}, 
     })
 }
 
-export const getAccountCards = async (req: Request<{ accountId: string, itemsPerPage: number, currentPage: number }, {}, CardResponse[]>, res: Response) => {
+export const getAccountCards = async (req: Request<{ accountId: string }, {}, CardResponse[], { itemsPerPage: number, currentPage: number }>, res: Response) => {
   const { accountId } = req.params
-  const itemsPerPage = req.params.itemsPerPage ?? 10
-  const page = req.params.itemsPerPage ?? 1
+
+  const itemsPerPage = req.query.itemsPerPage ?? 10
+  const page = req.query.itemsPerPage ?? 1
   const currentPage = (page - 1) * itemsPerPage
 
   const account = await AccountRepository.exists({ where: { id: accountId } })
@@ -171,12 +172,12 @@ export const getAccountCards = async (req: Request<{ accountId: string, itemsPer
     .catch(error => UnprocessableContent(error.message, res))
 }
 
-export const getAccountTransactions = async (req: Request<{ accountId: string, itemsPerPage: number, currentPage: number }, {}, TransactionResponse>, res: Response) => {
+export const getAccountTransactions = async (req: Request<{ accountId: string }, {}, TransactionResponse, { itemsPerPage: number, currentPage: number }>, res: Response) => {
   const { accountId } = req.params
   const account = await AccountRepository.exists({ where: { id: accountId } })
 
-  const itemsPerPage = req.params.itemsPerPage ?? 10
-  const page = req.params.itemsPerPage ?? 1
+  const itemsPerPage = req.query.itemsPerPage ?? 10
+  const page = req.query.itemsPerPage ?? 1
   const currentPage = (page - 1) * itemsPerPage
 
   if (!account) {
