@@ -34,6 +34,8 @@ export type Card = {
   cvv: string
 }
 
+export type CardWithAuth = Card & { personId: string }
+
 export type CardResponse = GenericResponse & Card
 
 export type TransactionType = 'credit' | 'debit'
