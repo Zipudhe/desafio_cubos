@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
-import { AppDataSource } from '../db/index'
-import { UnprocessableContent } from '../handlers/ErrorHandler'
-import { SuccesHandler } from '../handlers/SuccessHandler'
+import { AppDataSource } from '@db/index'
+import { UnprocessableContent } from '@handlers/ErrorHandler'
+import { SuccesHandler } from '@handlers/SuccessHandler'
 
 import { CardResponse } from './index'
 

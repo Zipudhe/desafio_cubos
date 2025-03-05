@@ -1,6 +1,8 @@
-const { describe, it, assert } = require('node:test')
+import assert from 'node:assert'
+import { describe, it } from 'node:test'
 
-const { isEmpty } = require('../src/utils/validators');
+
+import { isEmpty } from '../src/utils/validators';
 
 describe('isEmpty', function () {
   it('should return true for empty array', function () {

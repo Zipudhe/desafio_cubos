@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import dotenv from 'dotenv'
 
-import { UnAuthorized } from "../handlers/ErrorHandler";
+import { UnAuthorized } from '@handlers/ErrorHandler'
 
 dotenv.config()
 

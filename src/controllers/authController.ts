@@ -3,11 +3,11 @@ import { Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 
-import { AppDataSource } from '../db/index'
-import { People } from '../entity/People'
-import { BadRequest, UnAuthorized } from '../handlers/ErrorHandler'
-import { SuccesHandler } from '../handlers/SuccessHandler'
-import { hasRequiredFields } from '../utils/validators'
+import { AppDataSource } from '@db/index'
+import { People } from '@entites/People'
+import { BadRequest, UnAuthorized } from '@handlers/ErrorHandler'
+import { SuccesHandler } from '@handlers/SuccessHandler'
+import { hasRequiredFields } from '@utils/validators'
 
 dotenv.config()
 

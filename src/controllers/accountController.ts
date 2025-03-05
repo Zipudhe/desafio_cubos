@@ -73,11 +73,10 @@ export const getAccounts = async (req: Request<{}, {}, { personId: string }>, re
     }
   })
 
-  return SuccesHandler(accounts, res)
+  SuccesHandler(accounts, res)
 }
 
-
-export const createAccountCard = async (req: Request<{ accountId: string }, {}, CardWithAuth>, res: Response) => {
+export const createAccountCard = async (req: Request<{ accountId: string }, {}, CardWithAuth>, res: Response<void>) => {
 
   const cardNumberRegex = /(\d{4}\s*){4}/
   const cvvRegex = /(\d{3})/
@@ -146,7 +145,7 @@ export const createAccountCard = async (req: Request<{ accountId: string }, {}, 
   const newCard = CardRepository.create(cardPayload)
   newCard.account = account
 
-  return CardRepository.save(newCard)
+  CardRepository.save(newCard)
     .then(createdCard => {
       delete createdCard['account']
       const cardCleaned = { ...createdCard, number: createdCard.number.slice(-4) }
@@ -155,6 +154,8 @@ export const createAccountCard = async (req: Request<{ accountId: string }, {}, 
     .catch(error => {
       UnprocessableContent(error.message, res)
     })
+
+  return
 }
 
 export const getAccountCards = async (req: Request<{ accountId: string }, CardResponse[], { personId: string }, { itemsPerPage: number, currentPage: number }>, res: Response) => {

@@ -6,14 +6,32 @@
     ],
     "baseUrl": "./src",
     "paths": {
-      "@entites": [
-        "src/entity/*"
+      "@controllers/*": [
+        "controllers/*"
       ],
-      "@migrations": [
-        "src/migration/*"
+      "@entities/*": [
+        "entity/*"
       ],
-      "@handlers": [
-        "src/handlers/*"
+      "@migrations/*": [
+        "migration/*"
+      ],
+      "@handlers/*": [
+        "handlers/*"
+      ],
+      "@db/*": [
+        "db/*"
+      ],
+      "@middlewares/*": [
+        "middlewares/*"
+      ],
+      "@routes/*": [
+        "routes/*"
+      ],
+      "@services/*": [
+        "services/*"
+      ],
+      "@utils/*": [
+        "utils/*"
       ],
     },
     "target": "es5",

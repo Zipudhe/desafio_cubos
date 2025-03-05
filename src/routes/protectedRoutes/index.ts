@@ -1,6 +1,6 @@
 import { router as AccountsRouter } from './accounts'
 import { router as CardsRouter } from './accounts'
-import { authMiddleware } from '../../middlewares/index'
+import { authMiddleware } from '@middlewares/index'
 
 import { Router } from 'express'
 

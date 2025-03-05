@@ -1,11 +1,11 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcrypt'
 
-import { AppDataSource } from '../db/index'
-import { People } from '../entity/People'
-import { BadRequest, UnprocessableContent, ServerError } from '../handlers/ErrorHandler'
-import { CreatedHandler } from '../handlers/SuccessHandler'
-import { hasRequiredFields } from '../utils/validators'
+import { AppDataSource } from '@db/index'
+import { People } from '@entities/People'
+import { BadRequest, UnprocessableContent, ServerError } from '@handlers/ErrorHandler'
+import { CreatedHandler } from '@handlers/SuccessHandler'
+import { hasRequiredFields } from '@utils/validators'
 
 import { Person } from './index'
 

@@ -1,5 +1,5 @@
 import Express from 'express'
-import { PeopleController } from '../controllers/index'
+import { PeopleController } from '@controllers/index'
 
 export const router = Express.Router()
 

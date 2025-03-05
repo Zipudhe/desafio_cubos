@@ -1,9 +1,9 @@
 import express, { Response } from 'express'
-import { AppDataSource } from './db/index'
+import { AppDataSource } from '@db/index'
 import dotenv from 'dotenv'
 
-import router from './routes/index'
-import { ServerError } from './handlers/ErrorHandler'
+import router from '@routes/index'
+import { ServerError } from '@handlers/ErrorHandler'
 
 dotenv.config()
 
